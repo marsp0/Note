@@ -1,5 +1,8 @@
 import datetime
 import shelve
+import logging
+import os
+
 
 
 class Note(object):
@@ -51,16 +54,22 @@ class Notebook(object):
 		'''
 
 		self.filename = filename
+		self.path = 'database'
 
 		self.start_database()
-		print self.notes
+
 
 	def start_database(self):
 		''' 
 		Opens a shelve object checks to see if already exists and loads the info from it,
 		if not creates an empty dictionary. Loads also a dictionary containing empty indexes
 		 '''
-		database = shelve.open(self.filename)
+		if os.path.isdir(self.path):
+			path = os.path.join(self.path,self.filename)
+		else:
+			os.mkdir(self.path)
+			path = os.path.join(self.path,self.filename)
+		database = shelve.open(path)	
 		if database:
 			self.notes = database['notes']
 			self.indexes_to_fill = database['indexes_to_fill']
@@ -73,7 +82,7 @@ class Notebook(object):
 		''' 
 		Opens a shelve object, saves the notes and closes the shelve object
 		'''
-		database = shelve.open(self.filename)
+		database = shelve.open(os.path.join(self.path,self.filename))
 		database['notes'] = self.notes
 		database['indexes_to_fill'] = self.indexes_to_fill
 		database.close()
@@ -155,7 +164,6 @@ class Notebook(object):
 		'''
 		if self.notes:
 			list_to_return = self.notes[current]
-			print list_to_return
 			return list_to_return
 		else:
 			pass
