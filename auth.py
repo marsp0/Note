@@ -2,6 +2,8 @@ import hashlib
 import shelve
 import ex
 import datetime
+from log import logging_decorator
+import logging
 
 class User(object):
 
@@ -41,11 +43,20 @@ class User(object):
 
 class Authenticate(object):
 
+	logger =logging.getLogger('Users')
+	logger.setLevel(logging.DEBUG)
+	handler = logging.FileHandler('auth_log.log')
+	formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+	handler.setFormatter(formatter)
+	logger.addHandler(handler)
+
 	def __init__(self,databse_filename):
 
 		self.filename = databse_filename
 		self.start_database()
 
+
+	@logging_decorator(logger,'Starting User Database')
 	def start_database(self):
 		database_users = shelve.open(self.filename)
 		if database_users:
@@ -54,11 +65,13 @@ class Authenticate(object):
 			self.users = {}
 		database_users.close()
 
+	@logging_decorator(logger,'Stopping User Database')
 	def stop_database(self):
 		database_users = shelve.open(self.filename)
 		database_users['users'] = self.users
 		database_users.close()
 
+	@logging_decorator(logger, 'Registering a new user')
 	def register(self,info_dict):
 		try:
 			user = self.users[info_dict['username']]
@@ -67,6 +80,7 @@ class Authenticate(object):
 			user = User(info_dict)
 			self.users[user.username] = user
 
+	@logging_decorator(logger, 'Loging in')
 	def login(self,username,password):
 		try:
 			if self.users[username].compare_passwords(password):
@@ -77,6 +91,7 @@ class Authenticate(object):
 			raise ex.InvalidUsername(username)
 		return True
 
+	@logging_decorator(logger, 'Loging out')
 	def logout(self,username):
 		self.users[username].login_status=False
 		return True	

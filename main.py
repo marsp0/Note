@@ -2,10 +2,12 @@ import datetime
 import shelve
 import logging
 import os
+from log import logging_decorator
+import logging
 
 
 
-class Note(object):
+class Note(object):	
 
 	def __init__(self,idNumber,name,content,tags):
 		''' 
@@ -39,6 +41,12 @@ class Note(object):
 class Notebook(object):
 
 	id_note = 0
+	logger = logging.getLogger('Notebook')
+	logger.setLevel(logging.DEBUG)
+	handler = logging.FileHandler('auth_log.log')
+	formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+	handler.setFormatter(formatter)
+	logger.addHandler(handler)
 
 	def __init__(self,filename):
 
@@ -58,7 +66,7 @@ class Notebook(object):
 
 		self.start_database()
 
-
+	@logging_decorator(logger,'Starting Database')
 	def start_database(self):
 		''' 
 		Opens a shelve object checks to see if already exists and loads the info from it,
@@ -78,6 +86,7 @@ class Notebook(object):
 			self.indexes_to_fill = {}
 		database.close()
 
+	@logging_decorator(logger, 'Stopping Database')
 	def stop_database(self):
 		''' 
 		Opens a shelve object, saves the notes and closes the shelve object
@@ -112,6 +121,7 @@ class Notebook(object):
 				return True
 		return False
 
+	@logging_decorator(logger, 'Adding Note')
 	def add_note(self,infoDict):
 		''' 
 		Adds a new note to the dictionary and increases the class variable self.id_note
@@ -132,6 +142,7 @@ class Notebook(object):
 			note = Note(index,infoDict['name'],infoDict['content'],infoDict['tags'])
 			self.notes[bucket][index] = note
 
+	@logging_decorator(logger, 'Editing Note')
 	def edit_note(self,bucket,key,infoDict):
 		'''
 		Edit a note from the dictionary
@@ -144,6 +155,7 @@ class Notebook(object):
 		self.notes[bucket][key].content = infoDict['content']
 		self.notes[bucket][key].tags = infoDict['tags']
 
+	@logging_decorator(logger, 'Deleting Note')
 	def delete_note(self,bucket,key):
 		'''
 		deletes a note from the notes dict and appends the index to the list containing indexes that need to be created
