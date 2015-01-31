@@ -24,16 +24,16 @@ class GUI(tk.Frame):
 		self.login_frame = tk.Frame(self)
 		self.register_frame = tk.Frame(self)
 		self.in_frame = tk.Frame(self)
+		self.profile_frame = tk.Frame(self.in_frame)
 
 		self.auth = auth.Authenticate(user_database)
 
-
+		self.noteVars = {}
 
 		''' create the Notebook object, the current bucket to display, 
 		variable containing a note's id and a dictionary of IntVar objects so we can check which button is selected'''
 		self.current = 0
 		self.current_selected = None
-		self.noteVars = {}
 
 		'''login variables'''
 		self.login_username = tk.StringVar()
@@ -99,7 +99,7 @@ class GUI(tk.Frame):
 	def register(self):
 		self.register_frame.pack()
 		self.clear_vars(self.registerVars)
-		options = ('Username','Password','First Name','Last Name','Street','City','Country','Zip Code','Email Address')
+		options = ('Username','Password','First Name','Last Name','Street','City','Country','Zip Code','Email Address','EmailPassword')
 		row = 0
 		for i in xrange(0,len(options),2):
 			var = options[i].split()[0].lower()
@@ -107,11 +107,17 @@ class GUI(tk.Frame):
 			tk.Entry(self.register_frame,textvariable=self.registerVars[var],width=15).grid(row=row,column=1)
 			if i < 8:
 				var2 = options[i+1].split()[0].lower()
-				tk.Label(self.register_frame,text = options[i+1]).grid(row=row,column=2)
-				tk.Entry(self.register_frame,textvariable=self.registerVars[var2],width=15).grid(row=row,column=3)
-				row+=1
+				if options[i+1]=='Password':
+					tk.Label(self.register_frame,text = 'Password').grid(row=row,column=2)
+					tk.Entry(self.register_frame,textvariable=self.registerVars[var2],show='*',width=15).grid(row=row,column=3)
+				else:
+					tk.Label(self.register_frame,text = options[i+1]).grid(row=row,column=2)
+					tk.Entry(self.register_frame,textvariable=self.registerVars[var2],width=15).grid(row=row,column=3)
 			else:
 				var2 = None
+				row-=1
+			row+=1
+			
 		tk.Button(self.register_frame,text='Cancel',command = lambda : self.clearWidget(self.register_frame,self.login)).grid(row=row,column=2)
 		tk.Button(self.register_frame,text='Save',command = self.save_credentials).grid(row=row,column=3)
 
@@ -122,7 +128,7 @@ class GUI(tk.Frame):
 		tk.Label(self.login_frame,text = 'Username').grid(row=0,column=0)
 		tk.Entry(self.login_frame,textvariable = self.login_username).grid(row=0,column= 1,columnspan=2)
 		tk.Label(self.login_frame,text = 'Password').grid(row=1,column=0)
-		tk.Entry(self.login_frame,textvariable = self.login_password).grid(row=1,column = 1, columnspan=2)
+		tk.Entry(self.login_frame,textvariable = self.login_password,show='*').grid(row=1,column = 1, columnspan=2)
 		tk.Button(self.login_frame,text='Register',command = lambda : self.clearWidget(self.login_frame,self.register)).grid(row=2,column=1)
 		tk.Button(self.login_frame,text='Login',command = self.check_credentials).grid(row=2,column=2)
 		tk.Button(self.login_frame,text='Quit',command = self.quit_program).grid(row=2,column=0)
@@ -187,6 +193,7 @@ class GUI(tk.Frame):
 			for no in notes:
 				note = self.note.getSingleNote(key,no)
 				self.noteVars[note.id_number] = tk.IntVar()
+
 				button = tk.Checkbutton(self.sumary_frame,text=note.name[:10],variable = self.noteVars[note.id_number],command = lambda note = note: self.display_note(note))
 				button.trace = note.id_number
 				button.grid(row=self.update_row,columnspan=2,sticky='w')
@@ -223,20 +230,28 @@ class GUI(tk.Frame):
 		self.updateSumary(0)
 
 	def delete_note(self):
+		temp = None
 		for value in self.noteVars:
 			if self.noteVars[value].get() == 1:
 				self.note.delete_note(self.current,value)
+				temp = value
+		del self.noteVars[temp]
 		self.insert_text(self.name,'')
 		self.insert_text(self.tags,'')
 		self.insert_text(self.content,'')
 		self.updateSumary(self.current)
 
 	def go_left(self):
-		self.updateSumary(self.current-1)
+		try:
+			self.updateSumary(self.current-1)
+		except KeyError:
+			self.updateSumary(self.current)
 
 	def go_right(self):
-		self.updateSumary(self.current+1)
-
+		try:
+			self.updateSumary(self.current+1)
+		except KeyError:
+			self.updateSumary(self.current)
 
 if __name__=='__main__':
 	p = GUI(sys.argv[1])

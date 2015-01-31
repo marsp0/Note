@@ -14,3 +14,12 @@ class UserNotLoggedIn(AuthException):
 
 class EmptyField(AuthException):
 	pass
+
+class EmailException(Exception):
+
+	def __init__(self,email):
+		self.email = email
+
+class InvalidEmail(EmailException):
+	pass
+	

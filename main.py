@@ -40,7 +40,6 @@ class Note(object):
 
 class Notebook(object):
 
-	id_note = 0
 	logger = logging.getLogger('Notebook')
 	logger.setLevel(logging.DEBUG)
 	handler = logging.FileHandler('auth_log.log')
@@ -81,9 +80,11 @@ class Notebook(object):
 		if database:
 			self.notes = database['notes']
 			self.indexes_to_fill = database['indexes_to_fill']
+			self.id_note = int(database['id_note'])
 		else:
 			self.notes = {}
 			self.indexes_to_fill = {}
+			self.id_note = 0
 		database.close()
 
 	@logging_decorator(logger, 'Stopping Database')
@@ -94,6 +95,7 @@ class Notebook(object):
 		database = shelve.open(os.path.join(self.path,self.filename))
 		database['notes'] = self.notes
 		database['indexes_to_fill'] = self.indexes_to_fill
+		database['id_note'] = self.id_note
 		database.close()
 
 	def get_free_index(self):
@@ -108,9 +110,7 @@ class Notebook(object):
 				del self.indexes_to_fill[bucket][0]
 				return bucket, index
 			else:
-				index = self.indexes_to_fill[bucket][0]
-				del self.indexes_to_fill[bucket][0]
-				return bucket,index
+				return bucket,0
 
 	def where_to_save(self):
 		''' returns true if the there is free bucket in which we can save a note 
@@ -128,7 +128,7 @@ class Notebook(object):
 		PARAMS>
 			;infoDict; - dict - dict created in the gui part from the textvariables 
 		'''
-		if not self.indexes_to_fill:
+		if len(self.indexes_to_fill) == 0:
 			note = Note(self.id_note,infoDict['name'],infoDict['content'],infoDict['tags'].split())
 			index_where = len(self.notes.keys())
 			if self.where_to_save():
@@ -163,20 +163,22 @@ class Notebook(object):
 			;key; - int
 		'''
 		try:
-			self.indexes_to_fill[bucket].append(key)
-			
+			if key in self.indexes_to_fill[bucket]:
+				pass
+			else:
+				self.indexes_to_fill[bucket].append(key)
 		except KeyError:
 			self.indexes_to_fill[bucket] = [key]
-		finally:
-			del self.notes[bucket][key]
+		del self.notes[bucket][key]
 
 	def getNotes(self,current):
 		''' 
 		returns a bucket of 7 (less if its the last) of note objects
 		'''
+
 		if self.notes:
-			list_to_return = self.notes[current]
-			return list_to_return
+			dict_to_return = self.notes[current]
+			return dict_to_return
 		else:
 			pass
 
