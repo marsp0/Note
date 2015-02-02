@@ -1,4 +1,4 @@
-import main
+import note
 import Tkinter as tk
 import tkMessageBox as mb
 import tkFileDialog as fd
@@ -139,7 +139,7 @@ class GUI(tk.Frame):
 		try:
 			user = self.auth.login(username,password)
 			if user:
-				self.note = main.Notebook(username)
+				self.note = note.Notebook(username)
 				self.clearWidget(self.login_frame,self.launch_notebook)
 		except ex.InvalidPassword:
 			mb.showwarning('Invalid Password','Invalid password')
@@ -252,7 +252,3 @@ class GUI(tk.Frame):
 			self.updateSumary(self.current+1)
 		except KeyError:
 			self.updateSumary(self.current)
-
-if __name__=='__main__':
-	p = GUI(sys.argv[1])
-	p.mainloop()

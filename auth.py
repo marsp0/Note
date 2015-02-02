@@ -95,15 +95,3 @@ class Authenticate(object):
 	def logout(self,username):
 		self.users[username].login_status=False
 		return True	
-
-
-if __name__=='__main__':
-	test_user = {'username':'Dsa','password':'dsadsa','first':'Martin','last':'Spasov','street':'Baq','city':'Ganio','country':'Bulgaria','zip':'123','email':'akaka@gmail.com'}
-	test_user_object = User(test_user)
-	print test_user_object.get_info()
-	print test_user_object.compare_passwords('asd')
-	print test_user_object.password
-	authenticate_object = Authenticate('user_log')
-	authenticate_object.register(test_user)
-	print authenticate_object.login(test_user['username'],test_user['password'])
-	print authenticate_object.logout(test_user['username'])

@@ -23,7 +23,7 @@ class Note(object):
 			;search; - boolean - 
 
 		'''
-		self.id_number = idNumber
+		self.id_number = idNumber   
 		self.name = name
 		self.content = content
 		self.date = datetime.datetime.today()
@@ -52,8 +52,16 @@ class Notebook(object):
 		'''
 		Object representing the entire notebook containing the individual notes
 		PARAMS>
-			;filename; - string - where the shelve is going to save the notes
-			;notes; - dictionary - the individual note objects
+			;filename; - string - where the shelve is going to save the notes, the user's username is used for the name of the note database
+
+		VARS>
+			;logger; - the logger name
+			;handler; - the file where the logs are written
+			;formatter; - format of the logs
+			;self.path; - string - the name of the folder in which are stored the different users note databases
+			;self.notes; - the dictionary containing the users notes. The structure is in the form {bucket : {key : note} }
+			;self.indexes_to_fill; - dictionary containing the indexes of the deleted notes {bucket : [indexes]}
+			;self.id_note; - int - keeping track of the notes in the database and is used as key of the notes
 
 		METHODS>
 			;startDatabase; - None
@@ -68,8 +76,7 @@ class Notebook(object):
 	@logging_decorator(logger,'Starting Database')
 	def start_database(self):
 		''' 
-		Opens a shelve object checks to see if already exists and loads the info from it,
-		if not creates an empty dictionary. Loads also a dictionary containing empty indexes
+		Opens a shelve object and loads the notes,indexes to fill and the id variable
 		 '''
 		if os.path.isdir(self.path):
 			path = os.path.join(self.path,self.filename)
@@ -100,17 +107,20 @@ class Notebook(object):
 
 	def get_free_index(self):
 		''' 
-		function that returns tuple containing the first the bucket and an index
+		function that returns tuple containing the first bucket and an index available
 		'''
-		indexes = sorted(self.indexes_to_fill.keys())
-		if indexes:
-			bucket = indexes[0]
-			if len(self.indexes_to_fill[bucket]) > 1:
-				index = self.indexes_to_fill[bucket][0]
-				del self.indexes_to_fill[bucket][0]
-				return bucket, index
+		buckets = sorted(self.indexes_to_fill.keys())
+		if buckets:
+			single_bucket = buckets[0]
+
+			if len(self.indexes_to_fill[single_bucket]) >= 1:
+				index = self.indexes_to_fill[single_bucket][0]
+				del self.indexes_to_fill[single_bucket][0]
+				if len(self.indexes_to_fill[single_bucket]) == 0:
+					del self.indexes_to_fill[single_bucket]
+				return single_bucket, index
 			else:
-				return bucket,0
+				return single_bucket,single_bucket*7
 
 	def where_to_save(self):
 		''' returns true if the there is free bucket in which we can save a note 
@@ -161,13 +171,14 @@ class Notebook(object):
 		deletes a note from the notes dict and appends the index to the list containing indexes that need to be created
 		PARAMS>
 			;key; - int
+			;bucket; - int
 		'''
 		try:
-			if key in self.indexes_to_fill[bucket]:
-				pass
-			else:
-				self.indexes_to_fill[bucket].append(key)
+			#we append the index (1-7) to the bucket list with empty indexes to fill
+			print self.indexes_to_fill
+			self.indexes_to_fill[bucket].append(key)
 		except KeyError:
+			#if there is no such bucket key we create a list and add the index to the list
 			self.indexes_to_fill[bucket] = [key]
 		del self.notes[bucket][key]
 
@@ -187,10 +198,3 @@ class Notebook(object):
 		returns a single Note when given a bucket and a key
 		'''
 		return self.notes[bucket][key]
-
-
-if __name__=='__main__':
-	note = Note('Fuck','That bitch right in the pussay',['caramel','shoko'])
-	print note.search('shoko')
-	print note.search('bitch')
-	print note.search('Crack')
