@@ -175,7 +175,6 @@ class Notebook(object):
 		'''
 		try:
 			#we append the index (1-7) to the bucket list with empty indexes to fill
-			print self.indexes_to_fill
 			self.indexes_to_fill[bucket].append(key)
 		except KeyError:
 			#if there is no such bucket key we create a list and add the index to the list

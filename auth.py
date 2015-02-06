@@ -4,6 +4,7 @@ import ex
 import datetime
 from log import logging_decorator
 import logging
+import mail
 
 class User(object):
 
@@ -16,7 +17,7 @@ class User(object):
 		self.city = info_dict['city']
 		self.country = info_dict['country']
 		self.zip = info_dict['zip']
-		self.email = info_dict['email']
+		self.email = mail.Email(info_dict['email'])
 		self.login_status = False
 
 	def get_info(self):
@@ -39,6 +40,10 @@ class User(object):
 		given_password = hashlib.md5()
 		given_password.update(password)
 		return self.password == given_password.digest()
+
+	def send_email(self,data_to_send):
+		self.email.send_email(data_to_send)
+
 
 
 class Authenticate(object):
@@ -77,8 +82,11 @@ class Authenticate(object):
 			user = self.users[info_dict['username']]
 			raise ex.InvalidUsername(info_dict['username'])
 		except KeyError:
-			user = User(info_dict)
-			self.users[user.username] = user
+			if mail.mail_verifier.verify_email(info_dict['email']):
+				user = User(info_dict)
+				self.users[info_dict['username']] = user
+			else:
+				raise ex.InvalidEmail(info_dict['email'])
 
 	@logging_decorator(logger, 'Loging in')
 	def login(self,username,password):
@@ -90,6 +98,11 @@ class Authenticate(object):
 		except KeyError:
 			raise ex.InvalidUsername(username)
 		return True
+
+	def send_email(self,data_to_send):
+		self.users[data_to_send['username']].send_email(data_to_send)
+
+
 
 	@logging_decorator(logger, 'Loging out')
 	def logout(self,username):

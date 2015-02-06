@@ -50,6 +50,11 @@ class GUI(tk.Frame):
 									('zip',tk.IntVar()),
 									('email',tk.StringVar())])
 
+		'''Mail Variables'''
+		self.mailVars = dict([('to',tk.StringVar()),
+							('subject',tk.StringVar()),
+							('password',tk.StringVar())])
+
 		self.login()		
 
 		#
@@ -95,6 +100,8 @@ class GUI(tk.Frame):
 			mb.showwarning('Username Exists', 'The username already exists')
 		except ex.InvalidPassword:
 			mb.showwarning('InvalidPassword','Please choose another password')
+		except ex.InvalidEmail:
+			mb.showwarning('Invalid Email','Pleace enter a valid email address')
 
 	def register(self):
 		self.register_frame.pack()
@@ -136,6 +143,7 @@ class GUI(tk.Frame):
 	def check_credentials(self):
 		username = self.login_username.get()
 		password = self.login_password.get()
+		self.login_password.set('')
 		try:
 			user = self.auth.login(username,password)
 			if user:
@@ -167,7 +175,8 @@ class GUI(tk.Frame):
 		#buttons
 		tk.Button(self.button_frame,text='Save',command= self.save_note).grid(row=0,column=0)
 		tk.Button(self.button_frame,text='Delete Note',command = self.delete_note).grid(row=0,column=1)
-		tk.Button(self.button_frame,text='Logout',command = self.logout).grid(row=0,column=2)
+		tk.Button(self.button_frame,text='Share',command = self.share).grid(row=0,column = 2)
+		tk.Button(self.button_frame,text='Logout',command = self.logout).grid(row=0,column=3)
 
 		self.name = tk.Text(self.notes_frame,width=30,height=1,bd=1,selectborderwidth=0,relief='sunken')
 		self.name.pack(anchor='w')
@@ -230,16 +239,47 @@ class GUI(tk.Frame):
 		self.updateSumary(0)
 
 	def delete_note(self):
-		temp = None
-		for value in self.noteVars:
-			if self.noteVars[value].get() == 1:
-				self.note.delete_note(self.current,value)
-				temp = value
-		del self.noteVars[temp]
-		self.insert_text(self.name,'')
-		self.insert_text(self.tags,'')
-		self.insert_text(self.content,'')
-		self.updateSumary(self.current)
+		try:
+			temp = None
+			for value in self.noteVars:
+				if self.noteVars[value].get() == 1:
+					self.note.delete_note(self.current,value)
+					temp = value
+			del self.noteVars[temp]
+			self.insert_text(self.name,'')
+			self.insert_text(self.tags,'')
+			self.insert_text(self.content,'')
+			self.updateSumary(self.current)
+		except KeyError:
+			mb.showwarning('No note selected','You haven\'t selected any notes')
+
+	def share(self):
+		toplevel = tk.Toplevel()
+		tk.Label(toplevel,text = 'To').grid(row=0,column=0)
+		tk.Entry(toplevel,width = 40,textvariable = self.mailVars['to']).grid(row=0,column=1)
+		tk.Label(toplevel,text = 'Subject').grid(row=1,column=0)
+		tk.Entry(toplevel,width=40,textvariable = self.mailVars['subject']).grid(row=1,column=1)
+		tk.Label(toplevel,text = 'Email Password').grid(row=2,column=0)
+		tk.Entry(toplevel,width=40,textvariable=self.mailVars['password'],show='*').grid(row=2,column=1)
+		tk.Button(toplevel,text ='Send',command = lambda : self.send_note(toplevel)).grid(row=3,column=1)
+		tk.Button(toplevel,text = 'Cancel',command = lambda : self.close_share_window(toplevel)).grid(row=3,column=0)
+
+
+	def send_note(self,window):
+		try:
+			data_to_send = {'username':self.login_username.get(),'password':self.mailVars['password'].get(),
+							'message': '\nName : ' + self.name.get('1.0',self.end) +'\n\n'+'Content : ' + self.content.get('1.0',self.end)+'\n\n' + 'Tags : ' +self.tags.get('1.0',self.end),
+							'to' : self.mailVars['to'].get(), 'subject':self.mailVars['subject'].get()}
+			self.auth.send_email(data_to_send)
+			self.close_share_window(window)
+		except ex.InvalidEmail:
+			mb.showwarning('Invalid Email','Pleace enter a valid email address')
+		except ex.InvalidPassword:
+			mb.showwarning('Invalid Password','The password that you entered is wrong')
+
+	def close_share_window(self,window):
+		self.clear_vars(self.mailVars)
+		window.destroy()
 
 	def go_left(self):
 		try:
