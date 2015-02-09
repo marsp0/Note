@@ -54,7 +54,9 @@ class TesUser(unittest.TestCase):
 		self.user = User(self.user_info)
 
 	def test_get_info(self):
-		self.assertEqual(len(self.user.get_info()), len(self.user_info.keys()[:-1]))
+		test_user  = self.user.get_info()
+		self.assertEqual(type(test_user), type(self.user_info))
+		self.assertEqual(len(test_user), len(self.user_info.keys()[:-1]))
 
 	def test_password(self):
 		self.assertEqual(self.user.compare_passwords('dsadsa'),True)
@@ -64,7 +66,7 @@ class TestAuthenticate(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.auth = Authenticate('test_user')
-		cls.user_info = {'username':'Dsa','password':'dsadsa','first':'Martin','last':'Spasov','street':'Baq','city':'Ganio','country':'Bulgaria','zip':'123','email':'akaka@gmail.com'}
+		cls.user_info = {'username':'Dsa','password':'dsadsa','first':'Martin','last':'Spasov','street':'Baq','city':'Ganio','country':'Bulgaria','zip':'123','email':'Suburb4nFilth@gmail.com'}
 		cls.auth.register(cls.user_info)
 
 	#def test_register(self):
